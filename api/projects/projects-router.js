@@ -1,5 +1,6 @@
 // Write your "projects" router here!
 const express = require('express');
+const { validateID, validateBody } = require('./projects-middleware')
 
 const Projects = require('./projects-model');
 
@@ -14,7 +15,7 @@ router.get('/', (req, res, next) => {
         .catch(next)
 });
 
-router.get('/:id', (req, res, next) => {
+router.get('/:id', validateID, (req, res, next) => {
     const { id } = req.params;
     Projects.get(id)
         .then(project => {
@@ -32,12 +33,17 @@ router.get('/:id/actions', (req, res, next) => {
         .catch(next)
 })
 
-router.post('/', (req, res, next) => {
+router.post('/', validateBody, (req, res, next) => {
     const { name, description, completed } = req.body;
     const newProject = {
         name: name,
         description: description,
         completed: completed
+    }
+
+
+    if (Object.keys(newProject).length < 3) {
+        res.status(400)
     }
 
     Projects.insert(newProject)
@@ -50,21 +56,22 @@ router.post('/', (req, res, next) => {
         .catch(next)
 });
 
-router.put('/:id', (req, res, next) => {
+router.put('/:id', validateBody, (req, res, next) => {
+    const { name, description, completed } = req.body;
     const updatedProject = {
-        name: req.body.name,
-        description: req.body.description,
-        completed: req.body.completed
+        name: name,
+        description: description,
+        completed: completed
     }
 
-    Projects.update(req.params.id, updatedProject)
+        Projects.update(req.params.id, updatedProject)
         .then(project => {
             res.status(200).json(project)
         })
         .catch(next)
 });
 
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', validateID, (req, res, next) => {
     Projects.remove(req.params.id)
         .then(() => {
             res.status(200).json({message: "Project successfully dleted"})
@@ -77,7 +84,5 @@ router.use((error, req, res, next) => {
         message: "Something broke in the projects-router"
     })
 });
-
-
 
 module.exports = router;
